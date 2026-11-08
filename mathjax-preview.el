@@ -144,7 +144,7 @@
      ((not (and output-string (> (length output-string) 0)))
       (message "MathJax rendering failed or produced empty output."))
      (t
-      (let ((img (create-image output-string 'svg t :scale 1.2)))
+      (let ((img (create-image output-string 'svg t :scale 1.1)))
         (mathjax-preview--update-buffer img)
         (mathjax-preview--show-window img))))))
 
