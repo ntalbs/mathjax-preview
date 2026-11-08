@@ -1,4 +1,42 @@
-;; -*- lexical-binding: t; -*-
+;;; mathjax-preview.el --- Render MathJax expressions to SVG -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2026 ntalbs
+
+;; Author: ntalbs <ntalbsen@gmail.com>
+;; License: MIT
+;; Version: 0.1.0
+;; Package-Requires: ((emacs "30.2"))
+;; Keywords: convenience, wp
+;; URL: https://github.com/ntalbs/mathjax-preview
+
+;;; Commentary:
+;; This package provides a quick and easy way to render and preview
+;; MathJax expressions in a dedicated buffer.
+
+;;; License:
+;; MIT License
+
+;; Copyright (c) 2026 ntalbs
+
+;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;; of this software and associated documentation files (the "Software"), to deal
+;; in the Software without restriction, including without limitation the rights
+;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+;; copies of the Software, and to permit persons to whom the Software is
+;; furnished to do so, subject to the following conditions:
+
+;; The above copyright notice and this permission notice shall be included in all
+;; copies or substantial portions of the Software.
+
+;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+;; SOFTWARE.
+
+;;; Code:
 
 (require 'rx)
 (require 'subr-x)
@@ -151,3 +189,5 @@ Can be an executable name available in PATH or an absolute path."
         (mathjax-preview--show-window img))))))
 
 (provide 'mathjax-preview)
+
+;;; mathjax-preview.el ends here
