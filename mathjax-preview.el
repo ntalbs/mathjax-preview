@@ -55,7 +55,7 @@ Can be an executable name available in PATH or an absolute path."
   :type 'integer
   :group 'mathjax-preview)
 
-(defcustom mathjax-preview-margin-top 5
+(defcustom mathjax-preview-margin-top 0
   "Top margin for rendered math in pixels."
   :type 'integer
   :group 'mathjax-preview)
@@ -153,10 +153,17 @@ Can be an executable name available in PATH or an absolute path."
   (with-current-buffer (get-buffer-create mathjax-preview-buffer-name)
     (let* ((inhibit-read-only t))
       (erase-buffer)
-      (insert (propertize " " 'display `(space :width ,mathjax-preview-margin-left)))
+      (insert "\n")
+      (insert (propertize " "
+                          'display
+                          `(space :width ,mathjax-preview-margin-left
+                                  ;; :height ,mathjax-preview-margin-top
+                                  )))
       (insert-image svg)
+      (insert "\n")
       (goto-char (point-min))
       (setq-local cursor-type nil)
+      (hl-line-mode -1)
       (local-set-key (kbd "q") #'quit-window)
       (setq buffer-read-only t))))
 
