@@ -50,6 +50,16 @@ Can be an executable name available in PATH or an absolute path."
   :type 'string
   :group 'mathjax-preview)
 
+(defcustom mathjax-preview-overlay-color "#f3eaf4"
+  "Color for math block (including inline) overlay color."
+  :type 'string
+  :group 'mathjax-preview)
+
+(defcustom mathjax-preview-overlay-duration 3
+  "Duration for showing overlay over math block in second."
+  :type 'integer
+  :group 'mathjax-preview)
+
 (defcustom mathjax-preview-margin-left 10
   "Left margin for rendered math in pixels."
   :type 'integer
@@ -162,10 +172,10 @@ Can be an executable name available in PATH or an absolute path."
       latex)))
 
 (defun mathjax-preview--highlight-math-expr (start end)
-  "Highlight captured math expression between START and END for a second."
+  "Highlight captured math expression between START and END for three second."
   (let ((ov (make-overlay start end)))
-    (overlay-put ov 'face '((:background "light yellow" :extend t)))
-    (run-with-timer 1.0 nil #'delete-overlay ov)))
+    (overlay-put ov 'face `(:background ,mathjax-preview-overlay-color :extend t))
+    (run-with-timer mathjax-preview-overlay-duration nil #'delete-overlay ov)))
 
 (defun mathjax-preview--render-to-svg (input)
   "Render the MathJax expression INPUT string to SVG and return it as a string."
