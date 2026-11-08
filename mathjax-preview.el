@@ -223,7 +223,8 @@ Can be an executable name available in PATH or an absolute path."
          (char-height (max 1 (frame-char-height)))
          (required-lines (+ (ceiling (/ (float img-height-px) char-height)) 4)))
     (unless window
-      (setq window (display-buffer-in-side-window preview-buf '((side . bottom)))))
+      (setq window (display-buffer-in-side-window preview-buf '((side . bottom)
+                                                                (inhibit-select-window . t)))))
     (window-resize window (- required-lines (window-total-height window)) nil t)))
 
 (defun mathjax-preview--close-window ()
