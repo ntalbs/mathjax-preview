@@ -7,9 +7,10 @@
   "MathJax Preview settings."
   :group 'applications)
 
-(defcustom mathjax-preview-script-path "~/workspace/rendermj/src/index.js"
-  "Path to the MathJax Node.js CLI script."
-  :type 'file
+(defcustom mathjax-preview-command "rendermj"
+  "Command used to render MathJax expressions to SVG.
+Can be an executable name available in PATH or an absolute path."
+  :type 'string
   :group 'mathjax-preview)
 
 (defcustom mathjax-preview-margin-left 10
@@ -94,9 +95,7 @@
   "Render the MathJax expression to SVG and return it as a string."
   (let ((output-buf (generate-new-buffer " *mathjax-temp-output*")))
     (unwind-protect
-        (let ((exit-code (call-process "node" nil output-buf nil
-                                       (expand-file-name mathjax-preview-script-path)
-                                       latex-str)))
+        (let ((exit-code (call-process mathjax-preview-command nil output-buf nil latex-str)))
           (if (= exit-code 0)
               (with-current-buffer output-buf
                 (let ((result (string-trim (buffer-string))))
