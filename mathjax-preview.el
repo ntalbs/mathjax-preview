@@ -246,7 +246,7 @@ Can be an executable name available in PATH or an absolute path."
       (mathjax-preview--close-window)
       (message "MathJax rendering failed or produced empty output."))
      (t
-      (let ((svg (create-image output-string 'svg t :scale 1.1)))
+      (let ((svg (create-image output-string 'svg t :scale 1.2)))
         (mathjax-preview--update-buffer svg)
         (mathjax-preview--show-window svg))))))
 
