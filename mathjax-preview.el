@@ -80,11 +80,15 @@
                         (setq start (+ s 1) end (- e 1))))))))))
         (setq latex (buffer-substring-no-properties start end))))
 
-      (overlay-put (make-overlay start end) 'face '((t :background "yellow" :extend t)))
+      (mathjax-preview--highlight-math-expr start end)
 
       (when (and start end latex)
         (list :latex latex)))))
 
+(defun mathjax-preview--highlight-math-expr (start end)
+  (let ((ov (make-overlay start end)))
+    (overlay-put ov 'face '((t :background "light salmon" :extend t)))
+    (run-with-timer 1.0 nil #'delete-overlay ov)))
 
 (defun mathjax-preview--render-to-svg (latex-str)
   "Render the MathJax expression to SVG and return it as a string."
