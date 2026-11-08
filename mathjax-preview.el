@@ -114,10 +114,8 @@
 (defun mathjax-preview--update-buffer (img)
   "Open the preview buffer and insert the rendered image."
   (with-current-buffer (get-buffer-create mathjax-preview-buffer-name)
-    (let* ((inhibit-read-only t)
-           (char-height (max 1 (frame-char-height))))
+    (let* ((inhibit-read-only t))
       (erase-buffer)
-      (insert (propertize " " 'display `(space :width 0 :height ,mathjax-preview-margin-top)))
       (insert (propertize " " 'display `(space :width ,mathjax-preview-margin-left)))
       (insert-image img)
       (goto-char (point-min))
