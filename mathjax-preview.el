@@ -60,7 +60,7 @@ Can be an executable name available in PATH or an absolute path."
   :type 'integer
   :group 'mathjax-preview)
 
-(defvar mathjax-preview-buffer-name "*MathJax Preview*"
+(defconst mathjax-preview-buffer-name "*MathJax Preview*"
   "Name of the buffer displaying the math SVG preview.")
 
 (defun mathjax-preview--get-math-at-point ()
