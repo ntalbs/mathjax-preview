@@ -118,6 +118,7 @@
       (insert-image img)
       (goto-char (point-min))
       (setq-local cursor-type nil)
+      (local-set-key (kbd "q") #'quit-window)
       (setq buffer-read-only t))))
 
 (defun mathjax-preview--show-window (img)
