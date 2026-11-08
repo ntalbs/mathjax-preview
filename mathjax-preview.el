@@ -39,7 +39,6 @@
 ;;; Code:
 
 (require 'rx)
-(require 'subr-x)
 
 (defgroup mathjax-preview nil
   "MathJax Preview settings."
@@ -65,7 +64,7 @@ Can be an executable name available in PATH or an absolute path."
   "Name of the buffer displaying the math SVG preview.")
 
 (defun mathjax-preview--get-math-at-point ()
-  "Extract math expression at point"
+  "Extract math expression at point."
   (save-excursion
     (let ((p (point))
           start end latex)
@@ -125,15 +124,16 @@ Can be an executable name available in PATH or an absolute path."
         (list :latex latex)))))
 
 (defun mathjax-preview--highlight-math-expr (start end)
+  "Highlight captured math expression between START and END for a second."
   (let ((ov (make-overlay start end)))
-    (overlay-put ov 'face '((t :background "light salmon" :extend t)))
+    (overlay-put ov 'face '((:background "SeaGreen1" :extend t)))
     (run-with-timer 1.0 nil #'delete-overlay ov)))
 
-(defun mathjax-preview--render-to-svg (latex-str)
-  "Render the MathJax expression to SVG and return it as a string."
+(defun mathjax-preview--render-to-svg (input)
+  "Render the MathJax expression INPUT string to SVG and return it as a string."
   (let ((output-buf (generate-new-buffer " *mathjax-temp-output*")))
     (unwind-protect
-        (let ((exit-code (call-process mathjax-preview-command nil output-buf nil latex-str)))
+        (let ((exit-code (call-process mathjax-preview-command nil output-buf nil input)))
           (if (= exit-code 0)
               (with-current-buffer output-buf
                 (let ((result (string-trim (buffer-string))))
@@ -148,23 +148,23 @@ Can be an executable name available in PATH or an absolute path."
       (when (get-buffer output-buf)
         (kill-buffer output-buf)))))
 
-(defun mathjax-preview--update-buffer (img)
-  "Open the preview buffer and insert the rendered image."
+(defun mathjax-preview--update-buffer (svg)
+  "Open the preview buffer and insert the rendered SVG."
   (with-current-buffer (get-buffer-create mathjax-preview-buffer-name)
     (let* ((inhibit-read-only t))
       (erase-buffer)
       (insert (propertize " " 'display `(space :width ,mathjax-preview-margin-left)))
-      (insert-image img)
+      (insert-image svg)
       (goto-char (point-min))
       (setq-local cursor-type nil)
       (local-set-key (kbd "q") #'quit-window)
       (setq buffer-read-only t))))
 
-(defun mathjax-preview--show-window (img)
-  "Show preview window with proper size."
+(defun mathjax-preview--show-window (svg)
+  "Show SVG in preview window with proper size."
   (let* ((preview-buf (get-buffer mathjax-preview-buffer-name))
          (window (get-buffer-window preview-buf))
-         (img-height-px (cdr (image-size img t)))
+         (img-height-px (cdr (image-size svg t)))
          (char-height (max 1 (frame-char-height)))
          (required-lines (+ (ceiling (/ (float img-height-px) char-height)) 4)))
     (unless window
@@ -184,9 +184,9 @@ Can be an executable name available in PATH or an absolute path."
      ((not (and output-string (> (length output-string) 0)))
       (message "MathJax rendering failed or produced empty output."))
      (t
-      (let ((img (create-image output-string 'svg t :scale 1.1)))
-        (mathjax-preview--update-buffer img)
-        (mathjax-preview--show-window img))))))
+      (let ((svg (create-image output-string 'svg t :scale 1.1)))
+        (mathjax-preview--update-buffer svg)
+        (mathjax-preview--show-window svg))))))
 
 (provide 'mathjax-preview)
 
