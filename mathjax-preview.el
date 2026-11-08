@@ -69,53 +69,91 @@ Can be an executable name available in PATH or an absolute path."
     (let ((p (point))
           start end latex)
       (cond
-       ;; 1. check \[ ... \] block
+       ;; 1. Check $ ... $ inline block (Parity-based matching with explicit start/end)
        ((save-excursion
-          (when (re-search-backward (rx "\\" "[") nil t)
-            (let ((s (match-beginning 0)))
-              (goto-char (match-end 0))
-              (when (re-search-forward (rx "\\" "]") nil t)
-                (let ((e (match-end 0)))
-                  (when (and (<= s p) (<= p e))
-                    (setq start (+ s 2) end (- e 2))))))))
-        (setq latex (buffer-substring-no-properties start end)))
-       ;; 2. check \( ... \) inline block
-       ((save-excursion
-          (when (re-search-backward (rx "\\" "(") nil t)
-            (let ((s (match-beginning 0)))
-              (goto-char (match-end 0))
-              (when (re-search-forward (rx "\\" ")") nil t)
-                (let ((e (match-end 0)))
-                  (when (and (<= s p) (<= p e))
-                    (setq start (+ s 2) end (- e 2))))))))
-        (setq latex (buffer-substring-no-properties start end)))
-       ;; 3. check $$ ... $$ block
-       ((save-excursion
-          (when (re-search-backward (rx "$$") nil t)
-            (let ((s (match-beginning 0)))
-              (goto-char (match-end 0))
-              (when (re-search-forward (rx "$$") nil t)
-                (let ((e (match-end 0)))
-                  (when (and (<= s p) (<= p e))
-                    (setq start (+ s 2) end (- e 2))))))))
+          (let ((para-start (save-excursion (backward-paragraph) (point)))
+                (para-end   (save-excursion (forward-paragraph) (point)))
+                (dollars '())
+                (matched nil))
+            ;; Collect all valid unescaped single $ positions within the paragraph
+            (save-excursion
+              (goto-char para-start)
+              (while (re-search-forward (rx (optional (not (any "\\"))) (group "$")) para-end t)
+                (let ((pos (match-beginning 1)))
+                  ;; Ensure it's a single $ and not escaped by a backslash
+                  (unless (and (> pos para-start)
+                               (= (char-before pos) ?\\)
+                               (not (and (> pos (1+ para-start)) (= (char-before (1- pos)) ?\\))))
+                    (push pos dollars)))))
+
+            (setq dollars (nreverse dollars))
+
+            ;; Find the pair enclosing the cursor p
+            (let ((i 0))
+              (while (and (< (1+ i) (length dollars)) (not matched))
+                (let ((s (nth i dollars))
+                      (e (nth (+ i 1) dollars)))
+                  ;; Cursor must be strictly inside the dollar signs: s < p < e
+                  (when (and (< s p) (< p e))
+                    (setq start (1+ s)
+                          end e
+                          matched t)))
+                (setq i (+ i 2))))
+            matched))
+        ;; start and end are now properly bound for the common substring extraction below)
         (setq latex (buffer-substring-no-properties start end)))
 
-       ;; 4. check $ ... $ inline block
+       ;; 2. check \( ... \) inline block
        ((save-excursion
-          (let ((found nil))
-            (while (and (not found) (re-search-backward (rx "$") nil t))
-              (let ((s (match-beginning 0)))
-                (unless (or (and (> s (point-min)) (= (char-before s) ?$))
-                            (and (< s (point-max)) (= (char-after (1+ s)) ?$)))
-                  (setq found s))))
-            (when found
-              (let ((s found))
-                (goto-char (1+ s))
-                (when (re-search-forward (rx "$") nil t)
-                  (let ((e (match-end 0)))
-                    (unless (and (< e (point-max)) (= (char-after e) ?$))
-                      (when (and (<= s p) (<= p e))
-                        (setq start (+ s 1) end (- e 1))))))))))
+          (when (re-search-backward (rx "\\(") nil t)
+            (let ((s (match-end 0)))
+              (goto-char s)
+              (when (re-search-forward (rx "\\)") nil t)
+                (let ((e (match-beginning 0)))
+                  (when (and (<= s p) (<= p e))
+                    (setq start s end e)))))))
+        (setq latex (buffer-substring-no-properties start end)))
+
+       ;; 3. check \[ ... \] block
+       ((save-excursion
+          (when (re-search-backward (rx "\\[\n") nil t)
+            (let ((s (match-end 0)))
+              (goto-char s)
+              (when (re-search-forward (rx "\\]\n") nil t)
+                (let ((e (match-beginning 0)))
+                  (when (and (<= s p) (<= p e))
+                    (setq start s end e)))))))
+        (setq latex (buffer-substring-no-properties start end)))
+
+       ;; 4. check $$ ... $$ block
+       ((save-excursion
+          (let ((markers '())
+                (matched nil))
+            ;; Collect all $$ markers across the ENTIRE document
+            (save-excursion
+              (goto-char (point-min))
+              (let ((i 0))
+                (while (re-search-forward (rx "$$" (optional "%math") "\n") nil t)
+                  (if (= (% i 2) 0)
+                      (push (match-end 0) markers)
+                    (push (match-beginning 0) markers))
+                  (setq i (1+ i)))))
+
+            (setq markers (nreverse markers))
+
+            ;; Pair up consecutive $$ markers globally: odd index = start, even index = end
+            (let ((i 0))
+              (while (and (< (1+ i) (length markers)) (not matched))
+                (let ((s (nth i markers))
+                      (e (nth (+ i 1) markers)))
+                  ;; Determine actual content start
+                  ;; Ensure cursor p is strictly inside the global block content
+                  (when (and (<= s p) (<= p e))
+                    (setq start s
+                          end e
+                          matched t)))
+                (setq i (+ i 2))))
+            matched))
         (setq latex (buffer-substring-no-properties start end))))
 
       (when (and start end latex)
