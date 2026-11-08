@@ -178,6 +178,12 @@ Can be an executable name available in PATH or an absolute path."
       (setq window (display-buffer-in-side-window preview-buf '((side . bottom)))))
     (window-resize window (- required-lines (window-total-height window)) nil t)))
 
+(defun mathjax-preview--close-window ()
+  "Close the mathjax-preview window if it is currently visible."
+  (let ((window (get-buffer-window mathjax-preview-buffer-name)))
+    (when window
+      (delete-window window))))
+
 ;;;###autoload
 (defun mathjax-preview-at-point ()
   "Render the MathJax math expression at the current cursor position and display it in a bottom window."
@@ -186,8 +192,10 @@ Can be an executable name available in PATH or an absolute path."
          (output-string (and latex (mathjax-preview--render-to-svg latex))))
     (cond
      ((not latex)
+      (mathjax-preview--close-window)
       (message "No valid MathJax expression found at point."))
      ((not (and output-string (> (length output-string) 0)))
+      (mathjax-preview--close-window)
       (message "MathJax rendering failed or produced empty output."))
      (t
       (let ((svg (create-image output-string 'svg t :scale 1.1)))
