@@ -118,15 +118,15 @@ Can be an executable name available in PATH or an absolute path."
                         (setq start (+ s 1) end (- e 1))))))))))
         (setq latex (buffer-substring-no-properties start end))))
 
-      (mathjax-preview--highlight-math-expr start end)
-
       (when (and start end latex)
-        (list :latex latex)))))
+        (mathjax-preview--highlight-math-expr start end))
+
+      latex)))
 
 (defun mathjax-preview--highlight-math-expr (start end)
   "Highlight captured math expression between START and END for a second."
   (let ((ov (make-overlay start end)))
-    (overlay-put ov 'face '((:background "SeaGreen1" :extend t)))
+    (overlay-put ov 'face '((:background "light yellow" :extend t)))
     (run-with-timer 1.0 nil #'delete-overlay ov)))
 
 (defun mathjax-preview--render-to-svg (input)
@@ -175,11 +175,10 @@ Can be an executable name available in PATH or an absolute path."
 (defun mathjax-preview-at-point ()
   "Render the MathJax math expression at the current cursor position and display it in a bottom window."
   (interactive)
-  (let* ((info (mathjax-preview--get-math-at-point))
-         (latex (and info (plist-get info :latex)))
+  (let* ((latex (mathjax-preview--get-math-at-point))
          (output-string (and latex (mathjax-preview--render-to-svg latex))))
     (cond
-     ((not info)
+     ((not latex)
       (message "No valid MathJax expression found at point."))
      ((not (and output-string (> (length output-string) 0)))
       (message "MathJax rendering failed or produced empty output."))
