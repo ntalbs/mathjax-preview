@@ -71,9 +71,10 @@ Can be an executable name available in PATH or an absolute path."
 (defun mathjax-preview--check-executable ()
   "Check if `rendermj` executable path is valid."
   (if (not (executable-find mathjax-preview-rendermj-exec-path))
-      (progn
-        (warn "Could not find the 'rendermj' executable. Please check the path '%s' or install the CLI tool."
-              hanfix-executable-path)
+      (let ((msg (format
+                  "Could not find the 'rendermj' executable. Please check the path '%s' or install the CLI tool."
+                  mathjax-preview-rendermj-exec-path)))
+        (mathjax-preview--update-buffer msg)
         nil)
     t))
 
@@ -194,56 +195,54 @@ Can be an executable name available in PATH or an absolute path."
 
 (defun mathjax-preview--render-to-svg (input)
   "Render the MathJax expression INPUT string to SVG and return it as a string."
-  (if (mathjax-preview--check-executable)
-      (let ((output-buf (generate-new-buffer " *mathjax-temp-output*")))
-        (unwind-protect
-            (progn
-              (call-process mathjax-preview-rendermj-exec-path nil output-buf nil input)
-              (with-current-buffer output-buf
-                (string-trim (buffer-string))))
-          (when (get-buffer output-buf)
-            (kill-buffer output-buf))))))
+  (let ((output-buf (generate-new-buffer " *mathjax-temp-output*")))
+    (unwind-protect
+        (progn
+          (call-process mathjax-preview-rendermj-exec-path nil output-buf nil input)
+          (with-current-buffer output-buf
+            (string-trim (buffer-string))))
+      (when (get-buffer output-buf)
+        (kill-buffer output-buf)))))
 
 (defun mathjax-preview--display (input)
   "Render INPUT to SVG and display it in a bottom window."
-  (let ((output (and input (mathjax-preview--render-to-svg input))))
-    (cond
-     ((not input)
-      (let ((msg "No valid MathJax expression found at point."))
-        (mathjax-preview--update-text-buffer msg)
-        (mathjax-preview--show-window msg)))
-     ((not (string-prefix-p "<svg" output))
-      (let ((msg (format "MathJax rendering failed: %s" output)))
-        (mathjax-preview--update-text-buffer msg)
-        (mathjax-preview--show-window msg)))
-     (t
-      (let ((svg (create-image output 'svg t :scale 1.2)))
-        (mathjax-preview--update-buffer svg)
-        (mathjax-preview--show-window svg))))))
+  (when (mathjax-preview--check-executable)
+    (let ((output (and input (mathjax-preview--render-to-svg input))))
+      (cond
+       ((not input)
+        (let ((msg "No valid MathJax expression found at point."))
+          (mathjax-preview--update-buffer msg)))
+       ((not (string-prefix-p "<svg" output))
+        (let ((msg (format "MathJax rendering failed: %s" output)))
+          (mathjax-preview--update-buffer msg)))
+       (t
+        (let ((svg (create-image output 'svg t :scale 1.2)))
+          (mathjax-preview--update-buffer svg)))))))
 
-(defun mathjax-preview--update-text-buffer (text)
-  "Update the preview buffer to display error TEXT."
+(defun mathjax-preview--update-buffer (content)
+  "Display CONTENT (either svg or error message) in the preview buffer."
   (with-current-buffer (get-buffer-create mathjax-preview-buffer-name)
     (let ((inhibit-read-only t))
       (erase-buffer)
-      (insert "\n" text "\n"))))
+      (cond
+       ((imagep content)
+        (let ((svg content))
+          (insert "\n")
+          (insert (propertize " "
+                              'display
+                              `(space :width ,mathjax-preview-margin-left)))
+          (insert-image svg)
+          (insert "\n")))
+       ((stringp content)
+        (let ((err content))
+          (insert "\n" err "\n"))))
 
-(defun mathjax-preview--update-buffer (svg)
-  "Open the preview buffer and insert the rendered SVG."
-  (with-current-buffer (get-buffer-create mathjax-preview-buffer-name)
-    (let* ((inhibit-read-only t))
-      (erase-buffer)
-      (insert "\n")
-      (insert (propertize " "
-                          'display
-                          `(space :width ,mathjax-preview-margin-left)))
-      (insert-image svg)
-      (insert "\n")
       (goto-char (point-min))
       (setq-local cursor-type nil)
       (hl-line-mode -1)
       (local-set-key (kbd "q") #'quit-window)
-      (setq buffer-read-only t))))
+      (setq buffer-read-only t)))
+  (mathjax-preview--show-window content))
 
 (defun mathjax-preview--compute-height (content)
   "Compute CONTENT height in number of lines."
