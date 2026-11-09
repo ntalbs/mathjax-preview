@@ -264,13 +264,15 @@ Can be an executable name available in PATH or an absolute path."
 
 ;;;###autoload
 (defun mathjax-preview-at-point ()
-  "Render the MathJax math expression at the current cursor position and display it in a bottom window."
+  "Render the MathJax math expression at the current cursor position
+and display it in a bottom window."
   (interactive)
   (let ((input (mathjax-preview--get-math-at-point)))
     (mathjax-preview--display input)))
 
 (defun mathjax-preview-region ()
-  "Render the MathJax math expression in the specified region and display it in a bottom window."
+  "Render the MathJax math expression in the specified region
+and display it in a bottom window."
   (interactive)
   (if (use-region-p)
       (let* ((start (region-beginning))
