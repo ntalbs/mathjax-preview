@@ -194,6 +194,21 @@ Can be an executable name available in PATH or an absolute path."
       (when (get-buffer output-buf)
         (kill-buffer output-buf)))))
 
+(defun mathjax-preview--display (input)
+  "Render INPUT to SVG and display it in a bottom window."
+  (let ((output (and input (mathjax-preview--render-to-svg input))))
+    (cond
+     ((not input)
+      (mathjax-preview--close-window)
+      (message "No valid MathJax expression found at point."))
+     ((not (string-prefix-p "<svg" output))
+      (mathjax-preview--close-window)
+      (message "MathJax rendering failed: %s" output))
+     (t
+      (let ((svg (create-image output 'svg t :scale 1.2)))
+        (mathjax-preview--update-buffer svg)
+        (mathjax-preview--show-window svg))))))
+
 (defun mathjax-preview--update-buffer (svg)
   "Open the preview buffer and insert the rendered SVG."
   (with-current-buffer (get-buffer-create mathjax-preview-buffer-name)
@@ -233,19 +248,17 @@ Can be an executable name available in PATH or an absolute path."
 (defun mathjax-preview-at-point ()
   "Render the MathJax math expression at the current cursor position and display it in a bottom window."
   (interactive)
-  (let* ((latex (mathjax-preview--get-math-at-point))
-         (output (and latex (mathjax-preview--render-to-svg latex))))
-    (cond
-     ((not latex)
-      (mathjax-preview--close-window)
-      (message "No valid MathJax expression found at point."))
-     ((not (string-prefix-p "<svg" output))
-      (mathjax-preview--close-window)
-      (message "MathJax rendering failed: %s" output))
-     (t
-      (let ((svg (create-image output 'svg t :scale 1.2)))
-        (mathjax-preview--update-buffer svg)
-        (mathjax-preview--show-window svg))))))
+  (let ((input (mathjax-preview--get-math-at-point)))
+    (mathjax-preview--display input)))
+
+(defun mathjax-preview-region ()
+  "Render the MathJax math expression in the specified region and display it in a bottom window."
+  (interactive)
+  (if (use-region-p)
+      (let* ((start (region-beginning))
+             (end (region-end))
+             (input (string-trim (buffer-substring-no-properties start end))))
+        (mathjax-preview--display input))))
 
 (provide 'mathjax-preview)
 
