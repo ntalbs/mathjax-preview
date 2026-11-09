@@ -199,15 +199,24 @@ Can be an executable name available in PATH or an absolute path."
   (let ((output (and input (mathjax-preview--render-to-svg input))))
     (cond
      ((not input)
-      (mathjax-preview--close-window)
-      (message "No valid MathJax expression found at point."))
+      (let ((msg "No valid MathJax expression found at point."))
+        (mathjax-preview--update-text-buffer msg)
+        (mathjax-preview--show-window msg)))
      ((not (string-prefix-p "<svg" output))
-      (mathjax-preview--close-window)
-      (message "MathJax rendering failed: %s" output))
+      (let ((msg (format "MathJax rendering failed: %s" output)))
+        (mathjax-preview--update-text-buffer msg)
+        (mathjax-preview--show-window msg)))
      (t
       (let ((svg (create-image output 'svg t :scale 1.2)))
         (mathjax-preview--update-buffer svg)
         (mathjax-preview--show-window svg))))))
+
+(defun mathjax-preview--update-text-buffer (text)
+  "Update the preview buffer to display error TEXT."
+  (with-current-buffer (get-buffer-create mathjax-preview-buffer-name)
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (insert "\n" text "\n"))))
 
 (defun mathjax-preview--update-buffer (svg)
   "Open the preview buffer and insert the rendered SVG."
@@ -226,17 +235,26 @@ Can be an executable name available in PATH or an absolute path."
       (local-set-key (kbd "q") #'quit-window)
       (setq buffer-read-only t))))
 
-(defun mathjax-preview--show-window (svg)
-  "Show SVG in preview window with proper size."
-  (let* ((preview-buf (get-buffer mathjax-preview-buffer-name))
-         (window (get-buffer-window preview-buf))
-         (img-height-px (cdr (image-size svg t)))
-         (char-height (max 1 (frame-char-height)))
-         (required-lines (+ (ceiling (/ (float img-height-px) char-height)) 4)))
-    (unless window
-      (setq window (display-buffer-in-side-window preview-buf '((side . bottom)
-                                                                (inhibit-select-window . t)))))
-    (window-resize window (- required-lines (window-total-height window)) nil t)))
+(defun mathjax-preview--compute-height (content)
+  "Compute CONTENT height in number of lines."
+  (cond
+   ((imagep content)
+    (let* ((img-height-px (cdr (image-size content t)))
+          (line-height-px (max 1 (frame-char-height))))
+      (ceiling (/ (float img-height-px) line-height-px))))
+   ((stringp content)
+    (length (split-string content "\n")))
+   (t 1)))
+
+(defun mathjax-preview--show-window (content)
+  "Show the preview window displaying CONTENT (image or error text)."
+  (let* ((buf (get-buffer mathjax-preview-buffer-name))
+         (height-lines (mathjax-preview--compute-height content))
+         (win (display-buffer-in-side-window
+               buf
+               `((side . bottom)
+                 (window-height . ,(+ height-lines 3))))))
+    (set-window-dedicated-p win t)))
 
 (defun mathjax-preview--close-window ()
   "Close the mathjax-preview window if it is currently visible."
