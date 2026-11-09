@@ -44,7 +44,7 @@
   "MathJax Preview settings."
   :group 'applications)
 
-(defcustom mathjax-preview-command "rendermj"
+(defcustom mathjax-preview-rendermj-exec-path "rendermj"
   "Command used to render MathJax expressions to SVG.
 Can be an executable name available in PATH or an absolute path."
   :type 'string
@@ -67,6 +67,15 @@ Can be an executable name available in PATH or an absolute path."
 
 (defconst mathjax-preview-buffer-name "*MathJax Preview*"
   "Name of the buffer displaying the math SVG preview.")
+
+(defun mathjax-preview--check-executable ()
+  "Check if `rendermj` executable path is valid."
+  (if (not (executable-find mathjax-preview-rendermj-exec-path))
+      (progn
+        (warn "Could not find the 'rendermj' executable. Please check the path '%s' or install the CLI tool."
+              hanfix-executable-path)
+        nil)
+    t))
 
 (defun mathjax-preview--get-inline-math-paren ()
   "Return inline math expression if point is enclosed in \\( ... \\)."
@@ -185,14 +194,15 @@ Can be an executable name available in PATH or an absolute path."
 
 (defun mathjax-preview--render-to-svg (input)
   "Render the MathJax expression INPUT string to SVG and return it as a string."
-  (let ((output-buf (generate-new-buffer " *mathjax-temp-output*")))
-    (unwind-protect
-        (progn
-          (call-process mathjax-preview-command nil output-buf nil input)
-          (with-current-buffer output-buf
-            (string-trim (buffer-string))))
-      (when (get-buffer output-buf)
-        (kill-buffer output-buf)))))
+  (if (mathjax-preview--check-executable)
+      (let ((output-buf (generate-new-buffer " *mathjax-temp-output*")))
+        (unwind-protect
+            (progn
+              (call-process mathjax-preview-rendermj-exec-path nil output-buf nil input)
+              (with-current-buffer output-buf
+                (string-trim (buffer-string))))
+          (when (get-buffer output-buf)
+            (kill-buffer output-buf))))))
 
 (defun mathjax-preview--display (input)
   "Render INPUT to SVG and display it in a bottom window."
