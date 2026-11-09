@@ -68,103 +68,114 @@ Can be an executable name available in PATH or an absolute path."
 (defconst mathjax-preview-buffer-name "*MathJax Preview*"
   "Name of the buffer displaying the math SVG preview.")
 
-(defun mathjax-preview--get-math-at-point ()
-  "Extract math expression at point."
+(defun mathjax-preview--get-inline-math-paren ()
+  "Return inline math expression if point is enclosed in \\( ... \\)."
+  (let ((p (point))
+        start
+        end
+        matched)
+    (save-excursion
+      (when (re-search-backward (rx "\\(") nil t)
+        (let ((s (match-end 0)))
+          (goto-char s)
+          (when (re-search-forward (rx "\\)") nil t)
+            (let ((e (match-beginning 0)))
+              (when (and (<= s p) (<= p e))
+                (setq start s end e matched t))))))
+      (if matched (buffer-substring-no-properties start end)))))
+
+(defun mathjax-preview--get-block-math-bracket ()
+  "Return block math expression if point is enclosed in \\[ ... \\]."
   (save-excursion
     (let ((p (point))
-          start end latex)
-      (cond
-       ;; 1. Check $ ... $ inline block (Parity-based matching with explicit start/end)
-       ((save-excursion
-          (let ((para-start (save-excursion (backward-paragraph) (point)))
-                (para-end   (save-excursion (forward-paragraph) (point)))
-                (dollars '())
-                (matched nil))
-            ;; Collect all valid unescaped single $ positions within the paragraph
-            (save-excursion
-              (goto-char para-start)
-              (while (re-search-forward (rx (optional (not (any "\\"))) (group "$")) para-end t)
-                (let ((pos (match-beginning 1)))
-                  ;; Ensure it's a single $ and not escaped by a backslash
-                  (unless (and (> pos para-start)
-                               (= (char-before pos) ?\\)
-                               (not (and (> pos (1+ para-start)) (= (char-before (1- pos)) ?\\))))
-                    (push pos dollars)))))
+          start
+          end
+          matched)
+      (when (re-search-backward (rx "\\[\n") nil t)
+        (let ((s (match-end 0)))
+          (goto-char s)
+          (when (re-search-forward (rx "\\]\n") nil t)
+            (let ((e (match-beginning 0)))
+              (when (and (<= s p) (<= p e))
+                (setq start s end e matched t))))))
+      (if matched (buffer-substring-no-properties start end)))))
 
-            (setq dollars (nreverse dollars))
+(defun mathjax-preview--get-inline-math-dollar ()
+  "Return inline math expression if point is enclosed in $ ... $."
+  (let ((p (point))
+        (para-start (save-excursion (backward-paragraph) (point)))
+        (para-end   (save-excursion (forward-paragraph) (point)))
+        (dollars '())
+        matched
+        start
+        end)
+    ;; Collect all valid unescaped single $ positions within the paragraph
+    (save-excursion
+      (goto-char para-start)
+      (while (re-search-forward (rx (optional (not (any "\\"))) (group "$")) para-end t)
+        (let ((pos (match-beginning 1)))
+          ;; Ensure it's a single $ and not escaped by a backslash
+          (unless (and (> pos para-start)
+                       (= (char-before pos) ?\\)
+                       (not (and (> pos (1+ para-start)) (= (char-before (1- pos)) ?\\))))
+            (push pos dollars)))))
 
-            ;; Find the pair enclosing the cursor p
-            (let ((i 0))
-              (while (and (< (1+ i) (length dollars)) (not matched))
-                (let ((s (nth i dollars))
-                      (e (nth (+ i 1) dollars)))
-                  ;; Cursor must be strictly inside the dollar signs: s < p < e
-                  (when (and (< s p) (< p e))
-                    (setq start (1+ s)
-                          end e
-                          matched t)))
-                (setq i (+ i 2))))
-            matched))
-        ;; start and end are now properly bound for the common substring extraction below)
-        (setq latex (buffer-substring-no-properties start end)))
+    (setq dollars (nreverse dollars))
 
-       ;; 2. check \( ... \) inline block
-       ((save-excursion
-          (when (re-search-backward (rx "\\(") nil t)
-            (let ((s (match-end 0)))
-              (goto-char s)
-              (when (re-search-forward (rx "\\)") nil t)
-                (let ((e (match-beginning 0)))
-                  (when (and (<= s p) (<= p e))
-                    (setq start s end e)))))))
-        (setq latex (buffer-substring-no-properties start end)))
+    ;; Find the pair enclosing the cursor p
+    (let ((i 0))
+      (while (and (< (1+ i) (length dollars)) (not matched))
+        (let ((s (nth i dollars))
+              (e (nth (+ i 1) dollars)))
+          ;; Cursor must be strictly inside the dollar signs: s < p < e
+          (when (and (< s p) (< p e))
+            (setq start (1+ s)
+                  end e
+                  matched t)))
+        (setq i (+ i 2))))
+    (if matched
+        (buffer-substring-no-properties start end))))
 
-       ;; 3. check \[ ... \] block
-       ((save-excursion
-          (when (re-search-backward (rx "\\[\n") nil t)
-            (let ((s (match-end 0)))
-              (goto-char s)
-              (when (re-search-forward (rx "\\]\n") nil t)
-                (let ((e (match-beginning 0)))
-                  (when (and (<= s p) (<= p e))
-                    (setq start s end e)))))))
-        (setq latex (buffer-substring-no-properties start end)))
+(defun mathjax-preview--get-block-math-dollar ()
+  "Return block math expression if point is enclosed in $$ ... $$."
+  (let ((p (point))
+        (markers '()))
+    ;; Collect all $$ markers across the ENTIRE document
+    (save-excursion
+      (goto-char (point-min))
+      (let ((i 0))
+        (while (re-search-forward (rx "$$" (optional "%math") "\n") nil t)
+          (if (= (% i 2) 0)
+              (push (match-end 0) markers)
+            (push (match-beginning 0) markers))
+          (setq i (1+ i)))))
 
-       ;; 4. check $$ ... $$ block
-       ((save-excursion
-          (let ((markers '())
-                (matched nil))
-            ;; Collect all $$ markers across the ENTIRE document
-            (save-excursion
-              (goto-char (point-min))
-              (let ((i 0))
-                (while (re-search-forward (rx "$$" (optional "%math") "\n") nil t)
-                  (if (= (% i 2) 0)
-                      (push (match-end 0) markers)
-                    (push (match-beginning 0) markers))
-                  (setq i (1+ i)))))
+    (setq markers (nreverse markers))
 
-            (setq markers (nreverse markers))
+    ;; Pair up consecutive $$ markers globally: odd index = start, even index = end
+    (let ((i 0)
+          start
+          end
+          matched)
+      (while (and (< (1+ i) (length markers)) (not matched))
+        (let ((s (nth i markers))
+              (e (nth (+ i 1) markers)))
+          ;; Determine actual content start
+          ;; Ensure cursor p is strictly inside the global block content
+          (when (and (<= s p) (<= p e))
+            (setq start s
+                  end e
+                  matched t)))
+        (setq i (+ i 2)))
+      (if matched (buffer-substring-no-properties start end)))))
 
-            ;; Pair up consecutive $$ markers globally: odd index = start, even index = end
-            (let ((i 0))
-              (while (and (< (1+ i) (length markers)) (not matched))
-                (let ((s (nth i markers))
-                      (e (nth (+ i 1) markers)))
-                  ;; Determine actual content start
-                  ;; Ensure cursor p is strictly inside the global block content
-                  (when (and (<= s p) (<= p e))
-                    (setq start s
-                          end e
-                          matched t)))
-                (setq i (+ i 2))))
-            matched))
-        (setq latex (buffer-substring-no-properties start end))))
-
-      (when (and start end latex)
-        (mathjax-preview--highlight-math-expr start end))
-
-      latex)))
+(defun mathjax-preview--get-math-at-point ()
+  "Extract math expression at point."
+  (or
+   (mathjax-preview--get-inline-math-paren)
+   (mathjax-preview--get-block-math-bracket)
+   (mathjax-preview--get-inline-math-dollar)
+   (mathjax-preview--get-block-math-dollar)))
 
 (defun mathjax-preview--highlight-math-expr (start end)
   "Highlight captured math expression between START and END for three second."
