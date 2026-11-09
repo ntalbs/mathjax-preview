@@ -204,7 +204,7 @@ Can be an executable name available in PATH or an absolute path."
       (when (get-buffer output-buf)
         (kill-buffer output-buf)))))
 
-(defun mathjax-preview--display (input)
+(defun mathjax-preview--render (input)
   "Render INPUT to SVG and display it in a bottom window."
   (when (mathjax-preview--check-executable)
     (let ((output (and input (mathjax-preview--render-to-svg input))))
@@ -277,7 +277,7 @@ Can be an executable name available in PATH or an absolute path."
 and display it in a bottom window."
   (interactive)
   (let ((input (mathjax-preview--get-math-at-point)))
-    (mathjax-preview--display input)))
+    (mathjax-preview--render input)))
 
 (defun mathjax-preview-region ()
   "Render the MathJax math expression in the specified region
@@ -287,7 +287,7 @@ and display it in a bottom window."
       (let* ((start (region-beginning))
              (end (region-end))
              (input (string-trim (buffer-substring-no-properties start end))))
-        (mathjax-preview--display input))))
+        (mathjax-preview--render input))))
 
 (provide 'mathjax-preview)
 ;;; mathjax-preview.el ends here
