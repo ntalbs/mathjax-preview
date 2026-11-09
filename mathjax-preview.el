@@ -3,6 +3,7 @@
 ;; Copyright (C) 2026 ntalbs
 
 ;; Author: ntalbs <ntalbsen@gmail.com>
+;; Assisted-by: Gemini:3
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "31.1"))
 ;; Keywords: tex, mathjax, latex, preview
