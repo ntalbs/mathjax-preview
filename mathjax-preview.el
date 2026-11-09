@@ -5,8 +5,8 @@
 ;; Author: ntalbs <ntalbsen@gmail.com>
 ;; License: MIT
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "30.2"))
-;; Keywords: convenience, wp
+;; Package-Requires: ((emacs "31.1"))
+;; Keywords: convenience, wp, mathjax
 ;; URL: https://github.com/ntalbs/mathjax-preview
 
 ;;; Commentary:
@@ -62,11 +62,6 @@ Can be an executable name available in PATH or an absolute path."
 
 (defcustom mathjax-preview-margin-left 10
   "Left margin for rendered math in pixels."
-  :type 'integer
-  :group 'mathjax-preview)
-
-(defcustom mathjax-preview-margin-top 0
-  "Top margin for rendered math in pixels."
   :type 'integer
   :group 'mathjax-preview)
 
@@ -196,9 +191,7 @@ Can be an executable name available in PATH or an absolute path."
       (insert "\n")
       (insert (propertize " "
                           'display
-                          `(space :width ,mathjax-preview-margin-left
-                                  ;; :height ,mathjax-preview-margin-top
-                                  )))
+                          `(space :width ,mathjax-preview-margin-left)))
       (insert-image svg)
       (insert "\n")
       (goto-char (point-min))
