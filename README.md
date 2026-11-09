@@ -17,12 +17,26 @@ npm install rendermj -g
 3. Then add the following to `init.el`.
 ```elisp
 (use-package mathjax-preview
-  :bind (("C-c j p" . mathjax-preview-at-point)))
+  :load-path "~/.emacs.d/lisp/"
+  :bind (("C-c j p" . mathjax-preview-at-point)
+         ("C-c j r" . mathjax-preview-region)))
 ```
 
 ## Usage
-Once it's successfully loaded, you can use `mathjax-preview-at-point`
-to render and preview a math formula at the current cursor
-position.
+
+This package provides two interactive functions,
+`mathjax-preview-at-point` and `mathjax-preview-region`.
+
+* `mathjax-preview-at-point`: Find a MathJax expression at the current
+  point and render it.
+* `mathjax-preview-region`: Render MathJax expression in the selected
+  region.
 
 ![](images/mathjax-preview.png)
+
+## Math Syntax Support
+
+`mathjax-preview` supports standard LaTeX math syntax:
+
+* **Block Math**: Wrapped with `$$\n ... $$` or `\[\n ... \]`
+* **Inline Math**: Wrapped with `$ ... $` or `\( ... \)`
