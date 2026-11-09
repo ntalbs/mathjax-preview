@@ -3,10 +3,9 @@
 ;; Copyright (C) 2026 ntalbs
 
 ;; Author: ntalbs <ntalbsen@gmail.com>
-;; License: MIT
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "31.1"))
-;; Keywords: convenience, wp, mathjax
+;; Keywords: tex, mathjax, latex, preview
 ;; URL: https://github.com/ntalbs/mathjax-preview
 
 ;;; Commentary:
@@ -279,5 +278,4 @@ Can be an executable name available in PATH or an absolute path."
         (mathjax-preview--display input))))
 
 (provide 'mathjax-preview)
-
 ;;; mathjax-preview.el ends here
