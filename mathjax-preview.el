@@ -190,9 +190,8 @@ Can be an executable name available in PATH or an absolute path."
                     (progn
                       (message "MathJax Output Error: %s" result)
                       nil))))
-            (progn
-              (message "MathJax process exited with code %d" exit-code)
-              nil)))
+            (let ((err-msg (with-current-buffer output-buf (string-trim (buffer-string)))))
+              (if (string-empty-p err-msg) "Unknown error" err-msg))))
       (when (get-buffer output-buf)
         (kill-buffer output-buf)))))
 
@@ -238,16 +237,16 @@ Can be an executable name available in PATH or an absolute path."
   "Render the MathJax math expression at the current cursor position and display it in a bottom window."
   (interactive)
   (let* ((latex (mathjax-preview--get-math-at-point))
-         (output-string (and latex (mathjax-preview--render-to-svg latex))))
+         (output (and latex (mathjax-preview--render-to-svg latex))))
     (cond
      ((not latex)
       (mathjax-preview--close-window)
       (message "No valid MathJax expression found at point."))
-     ((not (and output-string (> (length output-string) 0)))
+     ((not (string-prefix-p "<svg" output))
       (mathjax-preview--close-window)
-      (message "MathJax rendering failed or produced empty output."))
+      (message "MathJax rendering failed: %s" output))
      (t
-      (let ((svg (create-image output-string 'svg t :scale 1.2)))
+      (let ((svg (create-image output 'svg t :scale 1.2)))
         (mathjax-preview--update-buffer svg)
         (mathjax-preview--show-window svg))))))
 
