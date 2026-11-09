@@ -181,17 +181,10 @@ Can be an executable name available in PATH or an absolute path."
   "Render the MathJax expression INPUT string to SVG and return it as a string."
   (let ((output-buf (generate-new-buffer " *mathjax-temp-output*")))
     (unwind-protect
-        (let ((exit-code (call-process mathjax-preview-command nil output-buf nil input)))
-          (if (= exit-code 0)
-              (with-current-buffer output-buf
-                (let ((result (string-trim (buffer-string))))
-                  (if (string-prefix-p "<svg" result)
-                      result
-                    (progn
-                      (message "MathJax Output Error: %s" result)
-                      nil))))
-            (let ((err-msg (with-current-buffer output-buf (string-trim (buffer-string)))))
-              (if (string-empty-p err-msg) "Unknown error" err-msg))))
+        (progn
+          (call-process mathjax-preview-command nil output-buf nil input)
+          (with-current-buffer output-buf
+            (string-trim (buffer-string))))
       (when (get-buffer output-buf)
         (kill-buffer output-buf)))))
 
