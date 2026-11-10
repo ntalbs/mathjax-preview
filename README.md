@@ -17,19 +17,15 @@ npm install rendermj -g
 3. Then add the following to `init.el`.
 ```elisp
 (use-package mathjax-preview
-  :bind (("C-c j p" . mathjax-preview-at-point)
-         ("C-c j r" . mathjax-preview-region)))
+  :bind (("C-c j p" . mathjax-preview)))
 ```
 
 ## Usage
 
-This package provides two interactive functions,
-`mathjax-preview-at-point` and `mathjax-preview-region`.
-
-* `mathjax-preview-at-point`: Find a MathJax expression at the current
-  point and render it.
-* `mathjax-preview-region`: Render MathJax expression in the selected
-  region.
+This package provides an interactive functions, `mathjax-preview`,
+which finds and renders the MathJax expression at point, and display
+the result in a preview window. You can also interactively select and
+preview specific math expressions.
 
 ![](images/mathjax-preview.png)
 
