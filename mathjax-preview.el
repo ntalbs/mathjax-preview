@@ -289,11 +289,9 @@ Can be an executable name available in PATH or an absolute path."
     (when window
       (delete-window window))))
 
-;;;###autoload
 (defun mathjax-preview-at-point ()
   "Render the MathJax expression at point.
 Display the result in a bottom window."
-  (interactive)
   (let ((math-rng (mathjax-preview--get-math-at-point)))
     (when math-rng
       (let* ((start (car math-rng))
@@ -305,12 +303,20 @@ Display the result in a bottom window."
 (defun mathjax-preview-region ()
   "Render the MathJax expression in region.
 Display the result in a bottom window."
-  (interactive)
   (if (use-region-p)
       (let* ((start (region-beginning))
              (end (region-end))
              (input (string-trim (buffer-substring-no-properties start end))))
         (mathjax-preview--render input))))
+
+;;;###autoload
+
+(defun mathjax-preview ()
+  "Preview MathJax expression at point or region."
+  (interactive)
+  (if (use-region-p)
+      (mathjax-preview-region)
+    (mathjax-preview-at-point)))
 
 (provide 'mathjax-preview)
 
