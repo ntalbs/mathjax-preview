@@ -92,7 +92,7 @@ Can be an executable name available in PATH or an absolute path."
             (let ((e (match-beginning 0)))
               (when (and (<= s p) (<= p e))
                 (setq start s end e matched t))))))
-      (if matched (buffer-substring-no-properties start end)))))
+      (if matched (cons start end)))))
 
 (defun mathjax-preview--get-block-math-bracket ()
   "Return block math expression if point is enclosed in \\[ ... \\]."
@@ -108,7 +108,7 @@ Can be an executable name available in PATH or an absolute path."
             (let ((e (match-beginning 0)))
               (when (and (<= s p) (<= p e))
                 (setq start s end e matched t))))))
-      (if matched (buffer-substring-no-properties start end)))))
+      (if matched (cons start end)))))
 
 (defun mathjax-preview--escaped-p (pos)
   "Return non-nil if the char at POS is escaped."
@@ -160,8 +160,7 @@ Can be an executable name available in PATH or an absolute path."
                   matched t))
           (setq i (1+ i)))))
 
-    (if matched
-        (buffer-substring-no-properties start end))))
+    (if matched (cons start end))))
 
 (defun mathjax-preview--get-block-math-dollar ()
   "Return block math expression if point is enclosed in $$ ... $$."
@@ -194,7 +193,7 @@ Can be an executable name available in PATH or an absolute path."
                   end e
                   matched t)))
         (setq i (+ i 2)))
-      (if matched (buffer-substring-no-properties start end)))))
+      (if matched (cons start end)))))
 
 (defun mathjax-preview--get-math-at-point ()
   "Extract math expression at point."
@@ -295,8 +294,13 @@ Can be an executable name available in PATH or an absolute path."
   "Render the MathJax expression at point.
 Display the result in a bottom window."
   (interactive)
-  (let ((input (mathjax-preview--get-math-at-point)))
-    (mathjax-preview--render input)))
+  (let ((math-rng (mathjax-preview--get-math-at-point)))
+    (when math-rng
+      (let* ((start (car math-rng))
+             (end (cdr math-rng))
+             (input (string-trim (buffer-substring-no-properties start end))))
+        (mathjax-preview--highlight-math-expr start end)
+        (mathjax-preview--render input)))))
 
 (defun mathjax-preview-region ()
   "Render the MathJax expression in region.
