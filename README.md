@@ -17,7 +17,6 @@ npm install rendermj -g
 3. Then add the following to `init.el`.
 ```elisp
 (use-package mathjax-preview
-  :load-path "~/.emacs.d/lisp/"
   :bind (("C-c j p" . mathjax-preview-at-point)
          ("C-c j r" . mathjax-preview-region)))
 ```
