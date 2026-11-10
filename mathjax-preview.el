@@ -110,6 +110,16 @@ Can be an executable name available in PATH or an absolute path."
                 (setq start s end e matched t))))))
       (if matched (buffer-substring-no-properties start end)))))
 
+(defun mathjax-preview--escaped-p (pos)
+  "Return non-nil if the char at POS is escaped."
+  (let ((count 0)
+        (p (1- pos)))
+    (while (and (>= p (point-min))
+                (= (char-after p) ?\\))
+      (setq count (1+ count)
+            p (1- p)))
+    (= (% count 2) 1)))
+
 (defun mathjax-preview--get-inline-math-dollar ()
   "Return inline math expression if point is enclosed in $ ... $."
   (let ((p (point))
@@ -119,30 +129,37 @@ Can be an executable name available in PATH or an absolute path."
         matched
         start
         end)
-    ;; Collect all valid unescaped single $ positions within the paragraph
+
+    ;; Collect all unescaped single $ positions within the paragraph
     (save-excursion
       (goto-char para-start)
-      (while (re-search-forward (rx (optional (not (any "\\"))) (group "$")) para-end t)
-        (let ((pos (match-beginning 1)))
-          ;; Ensure it's a single $ and not escaped by a backslash
-          (unless (and (> pos para-start)
-                       (= (char-before pos) ?\\)
-                       (not (and (> pos (1+ para-start)) (= (char-before (1- pos)) ?\\))))
+      (while (re-search-forward (rx "$") para-end t)
+        (let ((pos (match-beginning 0)))
+          (unless (mathjax-preview--escaped-p pos)
             (push pos dollars)))))
 
     (setq dollars (nreverse dollars))
 
     ;; Find the pair enclosing the cursor p
-    (let ((i 0))
-      (while (and (< (1+ i) (length dollars)) (not matched))
-        (let ((s (nth i dollars))
-              (e (nth (+ i 1) dollars)))
-          ;; Cursor must be strictly inside the dollar signs: s < p < e
-          (when (and (< s p) (< p e))
+    (let ((i 0)
+          (len (length dollars)))
+      (while (and (< i (1- len)) (not matched))
+        (let* ((s (nth i dollars))
+               (e (nth (1+ i) dollars))
+               (valid-opening-p
+                (and (< (1+ s) para-end)
+                     (not (memq (char-after (1+ s)) '(?\s ?\t ?\n)))))
+
+               (valid-closing-p
+                (and (> e para-start)
+                     (not (memq (char-before e) '(?\s ?\t ?\n))))))
+
+          (when (and valid-opening-p valid-closing-p (< s p e))
             (setq start (1+ s)
                   end e
-                  matched t)))
-        (setq i (+ i 2))))
+                  matched t))
+          (setq i (1+ i)))))
+
     (if matched
         (buffer-substring-no-properties start end))))
 
