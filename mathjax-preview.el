@@ -90,7 +90,7 @@ Can be an executable name available in PATH or an absolute path."
           (goto-char s)
           (when (re-search-forward (rx "\\)") nil t)
             (let ((e (match-beginning 0)))
-              (when (and (<= s p) (<= p e))
+              (when (<= s p e)
                 (setq start s end e matched t))))))
       (if matched (cons start end)))))
 
@@ -106,7 +106,7 @@ Can be an executable name available in PATH or an absolute path."
           (goto-char s)
           (when (re-search-forward (rx "\\]\n") nil t)
             (let ((e (match-beginning 0)))
-              (when (and (<= s p) (<= p e))
+              (when (<= s p e)
                 (setq start s end e matched t))))))
       (if matched (cons start end)))))
 
@@ -188,7 +188,7 @@ Can be an executable name available in PATH or an absolute path."
               (e (nth (+ i 1) markers)))
           ;; Determine actual content start
           ;; Ensure cursor p is strictly inside the global block content
-          (when (and (<= s p) (<= p e))
+          (when (<= s p e)
             (setq start s
                   end e
                   matched t)))
