@@ -227,7 +227,7 @@ Can be an executable name available in PATH or an absolute path."
   (when (mathjax-preview--check-executable)
     (let ((output (and input (mathjax-preview--render-to-svg input))))
       (cond
-       ((not input)
+       ((or (not input) (string-empty-p input))
         (let ((msg "No valid MathJax expression found at point."))
           (mathjax-preview--update-buffer msg)))
        ((not (string-prefix-p "<svg" output))
@@ -293,12 +293,13 @@ Can be an executable name available in PATH or an absolute path."
   "Render the MathJax expression at point.
 Display the result in a bottom window."
   (let ((math-rng (mathjax-preview--get-math-at-point)))
-    (when math-rng
-      (let* ((start (car math-rng))
-             (end (cdr math-rng))
-             (input (string-trim (buffer-substring-no-properties start end))))
-        (mathjax-preview--highlight-math-expr start end)
-        (mathjax-preview--render input)))))
+    (unless math-rng
+      (setq math-rng (cons 1 1)))
+    (let* ((start (car math-rng))
+           (end (cdr math-rng))
+           (input (string-trim (buffer-substring-no-properties start end))))
+      (mathjax-preview--highlight-math-expr start end)
+      (mathjax-preview--render input))))
 
 (defun mathjax-preview-region ()
   "Render the MathJax expression in region.
