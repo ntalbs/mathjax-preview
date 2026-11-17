@@ -6,7 +6,7 @@ how your math formula is rendered.
 
 ## Installation
 
-1. Install `rendermj`
+1. Install `rendermj`.
 `mathjax-preview` internally uses
 [rendermj](https://www.npmjs.com/package/rendermj) command, you need
 to install `rendermj` first.
@@ -17,6 +17,7 @@ npm install rendermj -g
 3. Then add the following to `init.el`.
 ```elisp
 (use-package mathjax-preview
+  :load-path "~/.emacs.d/lisp/"
   :bind (("C-c j p" . mathjax-preview)))
 ```
 
