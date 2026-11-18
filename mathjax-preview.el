@@ -172,7 +172,7 @@ Can be an executable name available in PATH or an absolute path."
       (let ((i 0))
         (while (re-search-forward (rx line-start "$$" (optional "%math") line-end) nil t)
           (if (= (% i 2) 0)
-              (push (match-end 0) markers)
+              (push (1+ (match-end 0)) markers)
             (push (match-beginning 0) markers))
           (setq i (1+ i)))))
 
