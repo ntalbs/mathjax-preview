@@ -55,7 +55,7 @@ Can be an executable name available in PATH or an absolute path."
   :type 'string
   :group 'mathjax-preview)
 
-(defcustom mathjax-preview-overlay-duration 3
+(defcustom mathjax-preview-overlay-duration 5
   "Duration for showing overlay over math block in second."
   :type 'number
   :group 'mathjax-preview)
