@@ -283,12 +283,6 @@ Can be an executable name available in PATH or an absolute path."
                  (window-height . ,(+ height-lines 3))))))
     (set-window-dedicated-p win t)))
 
-(defun mathjax-preview--close-window ()
-  "Close the mathjax-preview window if it is currently visible."
-  (let ((window (get-buffer-window mathjax-preview-buffer-name)))
-    (when window
-      (delete-window window))))
-
 (defun mathjax-preview-at-point ()
   "Render the MathJax expression at point.
 Display the result in a bottom window."
