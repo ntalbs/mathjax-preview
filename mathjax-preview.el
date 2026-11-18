@@ -71,9 +71,10 @@ Can be an executable name available in PATH or an absolute path."
 (defun mathjax-preview--check-executable ()
   "Check if `rendermj` executable path is valid."
   (if (not (executable-find mathjax-preview-rendermj-exec-path))
-      (let ((msg (format
-                  "Could not find the 'rendermj' executable. Please check the path '%s' or install the CLI tool."
-                  mathjax-preview-rendermj-exec-path)))
+      (let ((msg (concat
+                  "Could not find the 'rendermj' executable.\n"
+                  (format "Please check if the path '%s' is correct or install 'rendermj'."
+                          mathjax-preview-rendermj-exec-path))))
         (mathjax-preview--update-buffer msg)
         nil)
     t))
